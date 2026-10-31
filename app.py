@@ -1,328 +1,193 @@
-import streamlit as st
-import pandas as pd
+from pathlib import Path
+
 import joblib
-import os
+import pandas as pd
+import streamlit as st
 
+# ------------------------------------------------------------------
+# SETTINGS  (update TYPICAL_ERROR with your cross-validated MAE)
+# ------------------------------------------------------------------
+MODEL_PATH = Path(__file__).parent / "models" / "house_price_model.pkl"
+TYPICAL_ERROR = 970_000      # MAE of your best model, in rupees
+DATASET_AVG = 4_766_729      # mean price in Housing.csv
 
-# --------------------------------------------------
-# PAGE CONFIGURATION
-# --------------------------------------------------
+st.set_page_config(page_title="House Price Estimator", page_icon="🏠", layout="centered")
 
-st.set_page_config(
-    page_title="House Price Prediction",
-    page_icon="🏠",
-    layout="wide"
+# ------------------------------------------------------------------
+# STYLE: blueprint-style header and result panel
+# ------------------------------------------------------------------
+st.markdown(
+    """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&display=swap');
+.block-container { padding-top: 2rem; max-width: 820px; }
+h1, h2, h3, .bp-title, .bp-price { font-family: 'Bricolage Grotesque', sans-serif !important; }
+.bp-hero {
+    background-color: #14324A;
+    background-image:
+        linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+    border-radius: 14px; padding: 2rem 2rem 1.6rem; margin-bottom: 1.2rem; color: #F4F7FA;
+}
+.bp-title { font-size: 2.2rem; font-weight: 700; margin: 0 0 .3rem; line-height: 1.15; }
+.bp-sub { font-size: 1.02rem; opacity: .85; margin: 0; max-width: 34rem; }
+.bp-result {
+    background-color: #14324A;
+    background-image:
+        linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+    border: 2px dashed #F2B134; border-radius: 14px;
+    padding: 1.6rem 1.8rem; margin: 1rem 0; color: #F4F7FA;
+}
+.bp-label { font-size: .95rem; opacity: .8; margin: 0; }
+.bp-price { font-size: 3rem; font-weight: 700; color: #F2B134; margin: .1rem 0 .2rem; line-height: 1.1; }
+.bp-range { font-size: 1rem; margin: 0; opacity: .9; }
+#MainMenu, footer { visibility: hidden; }
+</style>
+""",
+    unsafe_allow_html=True,
 )
 
-
-# --------------------------------------------------
-# TITLE
-# --------------------------------------------------
-
-st.title("🏠 House Price Prediction")
-st.write(
-    "Enter the details of the house below to estimate its price "
-    "using a Machine Learning model."
+st.markdown(
+    """
+<div class="bp-hero">
+  <p class="bp-title">What is this house worth?</p>
+  <p class="bp-sub">Describe the property and get an instant price estimate
+  from a machine learning model trained on 545 listings.</p>
+</div>
+""",
+    unsafe_allow_html=True,
 )
 
-st.divider()
+# ------------------------------------------------------------------
+# MODEL
+# ------------------------------------------------------------------
+@st.cache_resource
+def load_model():
+    return joblib.load(MODEL_PATH)
 
-
-# --------------------------------------------------
-# LOAD MODEL
-# --------------------------------------------------
-
-MODEL_PATH = "models/house_price_model.pkl"
 
 try:
-    model = joblib.load(MODEL_PATH)
+    model = load_model()
 except Exception as e:
-    st.error("❌ Could not load the machine learning model.")
-    st.error(f"Error: {e}")
+    st.error(f"The model file could not be loaded from `{MODEL_PATH.name}`. Details: {e}")
     st.stop()
 
 
-# --------------------------------------------------
-# HOUSE DETAILS
-# --------------------------------------------------
-
-st.subheader("🏡 Enter House Details")
-
-
-col1, col2, col3 = st.columns(3)
-
-
-with col1:
-
-    area = st.number_input(
-        "Area (sq. ft.)",
-        min_value=100,
-        max_value=10000,
-        value=2000,
-        step=100
-    )
-
-    bedrooms = st.number_input(
-        "Number of Bedrooms",
-        min_value=1,
-        max_value=10,
-        value=3,
-        step=1
-    )
-
-    bathrooms = st.number_input(
-        "Number of Bathrooms",
-        min_value=1,
-        max_value=10,
-        value=2,
-        step=1
-    )
-
-
-with col2:
-
-    stories = st.number_input(
-        "Number of Stories",
-        min_value=1,
-        max_value=10,
-        value=2,
-        step=1
-    )
-
-    parking = st.number_input(
-        "Parking Spaces",
-        min_value=0,
-        max_value=5,
-        value=1,
-        step=1
-    )
-
-    mainroad = st.selectbox(
-        "Main Road Access",
-        ["Yes", "No"]
-    )
-
-
-with col3:
-
-    guestroom = st.selectbox(
-        "Guest Room",
-        ["Yes", "No"]
-    )
-
-    basement = st.selectbox(
-        "Basement",
-        ["Yes", "No"]
-    )
-
-    prefarea = st.selectbox(
-        "Preferred Area",
-        ["Yes", "No"]
-    )
-
-
-st.divider()
-
-
-# --------------------------------------------------
-# ADDITIONAL FEATURES
-# --------------------------------------------------
-
-st.subheader("✨ Additional Features")
-
-
-col4, col5, col6 = st.columns(3)
-
-
-with col4:
-
-    hotwaterheating = st.selectbox(
-        "Hot Water Heating",
-        ["Yes", "No"]
-    )
-
-
-with col5:
-
-    airconditioning = st.selectbox(
-        "Air Conditioning",
-        ["Yes", "No"]
-    )
-
-
-with col6:
-
-    furnishingstatus = st.selectbox(
-        "Furnishing Status",
-        [
-            "Furnished",
-            "Semi-Furnished",
-            "Unfurnished"
-        ]
-    )
-
-
-st.divider()
-
-
-# --------------------------------------------------
-# FEATURE ENGINEERING
-# --------------------------------------------------
-
-# IMPORTANT:
-# Price_per_area is NOT used because it directly
-# depends on the target variable (price).
-#
-# Bedrooms_per_area does NOT use price, so it is safe.
-
-bedrooms_per_area = bedrooms / area
-
-
-# --------------------------------------------------
-# CREATE INPUT DATAFRAME
-# --------------------------------------------------
-
-input_data = pd.DataFrame({
-
-    "area": [area],
-
-    "bedrooms": [bedrooms],
-
-    "bathrooms": [bathrooms],
-
-    "stories": [stories],
-
-    "parking": [parking],
-
-    "Bedrooms_per_area": [bedrooms_per_area],
-
-    "mainroad_yes": [
-        1 if mainroad == "Yes" else 0
-    ],
-
-    "guestroom_yes": [
-        1 if guestroom == "Yes" else 0
-    ],
-
-    "basement_yes": [
-        1 if basement == "Yes" else 0
-    ],
-
-    "hotwaterheating_yes": [
-        1 if hotwaterheating == "Yes" else 0
-    ],
-
-    "airconditioning_yes": [
-        1 if airconditioning == "Yes" else 0
-    ],
-
-    "prefarea_yes": [
-        1 if prefarea == "Yes" else 0
-    ],
-
-    "furnishingstatus_semi-furnished": [
-        1 if furnishingstatus == "Semi-Furnished" else 0
-    ],
-
-    "furnishingstatus_unfurnished": [
-        1 if furnishingstatus == "Unfurnished" else 0
-    ]
-})
-
-
-# --------------------------------------------------
-# MAKE SURE INPUT COLUMNS MATCH THE MODEL
-# --------------------------------------------------
-
-expected_columns = [
-    "area",
-    "bedrooms",
-    "bathrooms",
-    "stories",
-    "parking",
-    "Bedrooms_per_area",
-    "mainroad_yes",
-    "guestroom_yes",
-    "basement_yes",
-    "hotwaterheating_yes",
-    "airconditioning_yes",
-    "prefarea_yes",
-    "furnishingstatus_semi-furnished",
-    "furnishingstatus_unfurnished"
-]
-
-
-# Reorder columns exactly as expected
-input_data = input_data[expected_columns]
-
-
-# --------------------------------------------------
-# PREDICTION BUTTON
-# --------------------------------------------------
-
-st.subheader("🔮 Predict House Price")
-
-
-if st.button(
-    "Predict House Price",
-    type="primary",
-    use_container_width=True
-):
-
+def fmt_inr(value: float) -> str:
+    value = max(value, 0)
+    if value >= 1e7:
+        return f"₹ {value / 1e7:.2f} Cr"
+    return f"₹ {value / 1e5:.2f} Lakh"
+
+
+def prepare_input(raw: dict) -> pd.DataFrame:
+    """Works with the new Pipeline (raw columns) and the old encoded model."""
+    cols = list(getattr(model, "feature_names_in_", []))
+    if "mainroad" in cols:  # new pipeline trained on raw columns
+        return pd.DataFrame([raw])[cols]
+
+    encoded = {
+        "area": raw["area"],
+        "bedrooms": raw["bedrooms"],
+        "bathrooms": raw["bathrooms"],
+        "stories": raw["stories"],
+        "parking": raw["parking"],
+        "Bedrooms_per_area": raw["bedrooms"] / raw["area"],
+        "furnishingstatus_semi-furnished": int(raw["furnishingstatus"] == "semi-furnished"),
+        "furnishingstatus_unfurnished": int(raw["furnishingstatus"] == "unfurnished"),
+    }
+    for c in ["mainroad", "guestroom", "basement", "hotwaterheating", "airconditioning", "prefarea"]:
+        encoded[f"{c}_yes"] = int(raw[c] == "yes")
+    return pd.DataFrame([encoded])[cols]
+
+
+# ------------------------------------------------------------------
+# INPUT FORM  (limits match the range of the training data)
+# ------------------------------------------------------------------
+with st.form("house_form"):
+    st.subheader("Property details")
+    c1, c2 = st.columns(2)
+    with c1:
+        area = st.slider("Area (sq. ft.)", 1650, 16200, 4600, step=50)
+        bedrooms = st.slider("Bedrooms", 1, 6, 3)
+        bathrooms = st.slider("Bathrooms", 1, 4, 1)
+    with c2:
+        stories = st.slider("Stories", 1, 4, 2)
+        parking = st.slider("Parking spaces", 0, 3, 0)
+        furnishing = st.selectbox(
+            "Furnishing", ["Furnished", "Semi-Furnished", "Unfurnished"], index=1
+        )
+
+    st.subheader("Features")
+    f1, f2, f3 = st.columns(3)
+    with f1:
+        mainroad = st.checkbox("On a main road", value=True)
+        guestroom = st.checkbox("Guest room")
+    with f2:
+        basement = st.checkbox("Basement")
+        hotwater = st.checkbox("Hot water heating")
+    with f3:
+        aircon = st.checkbox("Air conditioning")
+        prefarea = st.checkbox("Preferred area")
+
+    submitted = st.form_submit_button("Estimate price", type="primary", use_container_width=True)
+
+
+def yn(flag: bool) -> str:
+    return "yes" if flag else "no"
+
+
+# ------------------------------------------------------------------
+# RESULT
+# ------------------------------------------------------------------
+if submitted:
+    raw = {
+        "area": area, "bedrooms": bedrooms, "bathrooms": bathrooms,
+        "stories": stories, "parking": parking,
+        "mainroad": yn(mainroad), "guestroom": yn(guestroom),
+        "basement": yn(basement), "hotwaterheating": yn(hotwater),
+        "airconditioning": yn(aircon), "prefarea": yn(prefarea),
+        "furnishingstatus": furnishing.lower(),
+    }
     try:
-
-        prediction = model.predict(input_data)[0]
-
-        st.success(
-            f"### 🏠 Estimated House Price: ₹ {prediction:,.2f}"
-        )
-
-        st.info(
-            "The prediction is generated using the trained "
-            "Random Forest Regression model."
-        )
-
+        prediction = float(model.predict(prepare_input(raw))[0])
     except Exception as e:
+        st.error(f"The estimate could not be calculated. Details: {e}")
+        st.stop()
 
-        st.error("❌ Prediction failed.")
-        st.error(f"Error: {e}")
+    st.markdown(
+        f"""
+<div class="bp-result">
+  <p class="bp-label">Estimated price</p>
+  <p class="bp-price">{fmt_inr(prediction)}</p>
+  <p class="bp-range">Likely range: {fmt_inr(prediction - TYPICAL_ERROR)} to {fmt_inr(prediction + TYPICAL_ERROR)}</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-        st.write("Input columns:")
-        st.write(input_data.columns.tolist())
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Exact estimate", f"₹ {prediction:,.0f}")
+    m2.metric("Price per sq. ft.", f"₹ {prediction / area:,.0f}")
+    m3.metric(
+        "Vs. average house in data",
+        fmt_inr(DATASET_AVG),
+        delta=f"{(prediction / DATASET_AVG - 1) * 100:+.0f}%",
+    )
 
+# ------------------------------------------------------------------
+# ABOUT
+# ------------------------------------------------------------------
+with st.expander("About this estimate"):
+    st.write(
+        f"The model is a scikit-learn regression model trained on 545 house listings "
+        f"(area, rooms, stories, parking, amenities and furnishing). On unseen data its "
+        f"typical error is about {fmt_inr(TYPICAL_ERROR)}, so treat the result as a guide, "
+        f"not a valuation. Inputs are limited to the ranges found in the training data, "
+        f"because the model can't predict reliably outside them."
+    )
 
-# --------------------------------------------------
-# PROJECT INFORMATION
-# --------------------------------------------------
-
-st.divider()
-
-st.subheader("📊 About the Project")
-
-st.write(
-    """
-    This project uses Machine Learning to predict house prices
-    based on various property characteristics.
-
-    **Machine Learning Model:** Random Forest Regression
-
-    **Features used:**
-    - Area
-    - Bedrooms
-    - Bathrooms
-    - Stories
-    - Parking
-    - Main road access
-    - Guest room
-    - Basement
-    - Hot water heating
-    - Air conditioning
-    - Preferred area
-    - Furnishing status
-    - Bedrooms per area
-    """
-)
-
-st.caption(
-    "House Price Prediction ML Project | Python • Pandas • Scikit-learn • Streamlit"
-)
+st.caption("Built with Python, pandas, scikit-learn and Streamlit.")
