@@ -20,7 +20,7 @@ st.markdown(
     """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&display=swap');
-.block-container { padding-top: 2.5rem; max-width: 780px; }
+.block-container { padding-top: 5rem !important; max-width: 780px; }
 h1, h2, h3, .hp-title, .hp-price { font-family: 'Fraunces', serif !important; color: #2A2018; }
 .hp-head { display: flex; gap: 16px; align-items: center; margin-bottom: 1.4rem; }
 .hp-mark { flex: none; width: 56px; height: 56px; border-radius: 14px; background: #2F5D50;
