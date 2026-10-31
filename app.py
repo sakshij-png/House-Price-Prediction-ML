@@ -14,48 +14,41 @@ DATASET_AVG = 4_766_729      # mean price in Housing.csv
 st.set_page_config(page_title="House Price Estimator", page_icon="🏠", layout="centered")
 
 # ------------------------------------------------------------------
-# STYLE: blueprint-style header and result panel
+# STYLE: beige and forest green (base colors live in .streamlit/config.toml)
 # ------------------------------------------------------------------
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&display=swap');
-.block-container { padding-top: 2rem; max-width: 820px; }
-h1, h2, h3, .bp-title, .bp-price { font-family: 'Bricolage Grotesque', sans-serif !important; }
-.bp-hero {
-    background-color: #14324A;
-    background-image:
-        linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
-    background-size: 28px 28px;
-    border-radius: 14px; padding: 2rem 2rem 1.6rem; margin-bottom: 1.2rem; color: #F4F7FA;
-}
-.bp-title { font-size: 2.2rem; font-weight: 700; margin: 0 0 .3rem; line-height: 1.15; }
-.bp-sub { font-size: 1.02rem; opacity: .85; margin: 0; max-width: 34rem; }
-.bp-result {
-    background-color: #14324A;
-    background-image:
-        linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
-    background-size: 28px 28px;
-    border: 2px dashed #F2B134; border-radius: 14px;
-    padding: 1.6rem 1.8rem; margin: 1rem 0; color: #F4F7FA;
-}
-.bp-label { font-size: .95rem; opacity: .8; margin: 0; }
-.bp-price { font-size: 3rem; font-weight: 700; color: #F2B134; margin: .1rem 0 .2rem; line-height: 1.1; }
-.bp-range { font-size: 1rem; margin: 0; opacity: .9; }
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&display=swap');
+.block-container { padding-top: 2.5rem; max-width: 780px; }
+h1, h2, h3, .hp-title, .hp-price { font-family: 'Fraunces', serif !important; color: #2A2018; }
+.hp-head { display: flex; gap: 16px; align-items: center; margin-bottom: 1.4rem; }
+.hp-mark { flex: none; width: 56px; height: 56px; border-radius: 14px; background: #2F5D50;
+           display: flex; align-items: center; justify-content: center; }
+.hp-title { font-size: 2.3rem; font-weight: 700; line-height: 1.1; margin: 0; }
+.hp-sub { color: #6A5B4B; margin: .3rem 0 0; }
+[data-testid="stForm"] { background: #FBF7EE; border: 1px solid #DDD1BA; border-radius: 14px; padding: 1.6rem; }
+.hp-res { background: #22463C; color: #F3ECDF; border-radius: 14px; padding: 1.8rem; margin: 1.2rem 0; }
+.hp-lbl { margin: 0; color: #CFC6B2; }
+.hp-price { font-size: 3.2rem; font-weight: 700; color: #EBC878 !important; margin: .2rem 0 .3rem; line-height: 1.1; }
+.hp-range { margin: 0; }
+.hp-m3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+         border-top: 1px solid #4B6B60; margin-top: 1.3rem; padding-top: 1.1rem; }
+.hp-m3 b { display: block; font-size: 1.2rem; }
+.hp-m3 span { font-size: .85rem; color: #CFC6B2; }
+@media (max-width: 600px) { .hp-m3 { grid-template-columns: 1fr; } }
 #MainMenu, footer { visibility: hidden; }
 </style>
-""",
-    unsafe_allow_html=True,
-)
 
-st.markdown(
-    """
-<div class="bp-hero">
-  <p class="bp-title">What is this house worth?</p>
-  <p class="bp-sub">Describe the property and get an instant price estimate
-  from a machine learning model trained on 545 listings.</p>
+<div class="hp-head">
+  <div class="hp-mark">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F3ECDF" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+  </div>
+  <div>
+    <p class="hp-title">House Price Estimator</p>
+    <p class="hp-sub">Enter a property's details and get an instant price estimate from a model trained on 545 listings.</p>
+  </div>
 </div>
 """,
     unsafe_allow_html=True,
@@ -81,6 +74,10 @@ def fmt_inr(value: float) -> str:
     if value >= 1e7:
         return f"₹ {value / 1e7:.2f} Cr"
     return f"₹ {value / 1e5:.2f} Lakh"
+
+
+def yn(flag: bool) -> str:
+    return "yes" if flag else "no"
 
 
 def prepare_input(raw: dict) -> pd.DataFrame:
@@ -111,34 +108,25 @@ with st.form("house_form"):
     st.subheader("Property details")
     c1, c2 = st.columns(2)
     with c1:
-        area = st.slider("Area (sq. ft.)", 1650, 16200, 4600, step=50)
-        bedrooms = st.slider("Bedrooms", 1, 6, 3)
-        bathrooms = st.slider("Bathrooms", 1, 4, 1)
+        area = st.number_input("Area (sq. ft.)", min_value=1650, max_value=16200, value=4600, step=50)
+        bathrooms = st.number_input("Bathrooms", min_value=1, max_value=4, value=1, step=1)
+        parking = st.number_input("Parking spaces", min_value=0, max_value=3, value=0, step=1)
     with c2:
-        stories = st.slider("Stories", 1, 4, 2)
-        parking = st.slider("Parking spaces", 0, 3, 0)
-        furnishing = st.selectbox(
-            "Furnishing", ["Furnished", "Semi-Furnished", "Unfurnished"], index=1
-        )
+        bedrooms = st.number_input("Bedrooms", min_value=1, max_value=6, value=3, step=1)
+        stories = st.number_input("Stories", min_value=1, max_value=4, value=2, step=1)
+        furnishing = st.selectbox("Furnishing", ["Furnished", "Semi-Furnished", "Unfurnished"], index=1)
 
     st.subheader("Features")
     f1, f2, f3 = st.columns(3)
-    with f1:
-        mainroad = st.checkbox("On a main road", value=True)
-        guestroom = st.checkbox("Guest room")
-    with f2:
-        basement = st.checkbox("Basement")
-        hotwater = st.checkbox("Hot water heating")
-    with f3:
-        aircon = st.checkbox("Air conditioning")
-        prefarea = st.checkbox("Preferred area")
+    mainroad = f1.checkbox("On a main road", value=True)
+    guestroom = f2.checkbox("Guest room")
+    basement = f3.checkbox("Basement")
+    f4, f5, f6 = st.columns(3)
+    hotwater = f4.checkbox("Hot water heating")
+    aircon = f5.checkbox("Air conditioning")
+    prefarea = f6.checkbox("Preferred area")
 
     submitted = st.form_submit_button("Estimate price", type="primary", use_container_width=True)
-
-
-def yn(flag: bool) -> str:
-    return "yes" if flag else "no"
-
 
 # ------------------------------------------------------------------
 # RESULT
@@ -158,24 +146,21 @@ if submitted:
         st.error(f"The estimate could not be calculated. Details: {e}")
         st.stop()
 
+    diff = (prediction / DATASET_AVG - 1) * 100
     st.markdown(
         f"""
-<div class="bp-result">
-  <p class="bp-label">Estimated price</p>
-  <p class="bp-price">{fmt_inr(prediction)}</p>
-  <p class="bp-range">Likely range: {fmt_inr(prediction - TYPICAL_ERROR)} to {fmt_inr(prediction + TYPICAL_ERROR)}</p>
+<div class="hp-res">
+  <p class="hp-lbl">Estimated price</p>
+  <p class="hp-price">{fmt_inr(prediction)}</p>
+  <p class="hp-range">Likely range: {fmt_inr(prediction - TYPICAL_ERROR)} to {fmt_inr(prediction + TYPICAL_ERROR)}</p>
+  <div class="hp-m3">
+    <div><b>₹ {prediction:,.0f}</b><span>Exact estimate</span></div>
+    <div><b>₹ {prediction / area:,.0f}</b><span>Price per sq. ft.</span></div>
+    <div><b>{diff:+.0f}%</b><span>Vs. average house ({fmt_inr(DATASET_AVG)})</span></div>
+  </div>
 </div>
 """,
         unsafe_allow_html=True,
-    )
-
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Exact estimate", f"₹ {prediction:,.0f}")
-    m2.metric("Price per sq. ft.", f"₹ {prediction / area:,.0f}")
-    m3.metric(
-        "Vs. average house in data",
-        fmt_inr(DATASET_AVG),
-        delta=f"{(prediction / DATASET_AVG - 1) * 100:+.0f}%",
     )
 
 # ------------------------------------------------------------------
