@@ -1,438 +1,114 @@
-\# House Price Prediction using Machine Learning
+# 🏠 House Price Estimator
+
+A machine learning web app that estimates a house's price from its size, rooms, amenities and furnishing, built with Python, scikit-learn and Streamlit.
+
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)
+
+**🔗 Live app:** <!-- UPDATE: paste your Streamlit link --> [[Open the House Price Estimator](https://YOUR-APP-LINK.streamlit.app](https://house-price-prediction-ml-lwpc6gsgnpcqsxo3bpvw7a.streamlit.app/)
+
+<img width="1275" height="853" alt="Screenshot 2026-11-01 121902" src="https://github.com/user-attachments/assets/8a36e1a4-fe1c-4f13-9170-8f88def77db1" />
 
 
+App screenshot
 
-A Machine Learning project that predicts house prices based on property features using regression algorithms and provides an interactive web interface built with Streamlit.
+## What it does
 
+Enter a property's details and the app returns:
 
+- the **estimated price**, shown in Lakh/Crore
+- a **likely price range**, based on the model's typical error
+- the **price per sq. ft.** and how the estimate compares with the average house in the data
 
-\## Project Overview
+Inputs are limited to the ranges found in the training data, so the model is never asked to predict far outside what it has seen.
 
+## Dataset
 
+The project uses the public **Housing Prices** dataset (`Housing.csv`) from Kaggle: **545 listings** with 12 features and the price.
 
-House price prediction is a common Machine Learning problem where various property characteristics are used to estimate the expected price of a house.
-
-
-
-This project performs:
-
-
-
-\- Data loading and preprocessing
-
-\- Data cleaning
-
-\- Exploratory Data Analysis (EDA)
-
-\- Feature engineering
-
-\- Categorical variable encoding
-
-\- Machine Learning model training
-
-\- Model evaluation
-
-\- Feature importance analysis
-
-\- House price prediction
-
-\- Streamlit web application deployment
-
-
-
-The final application allows users to enter house details and receive an estimated house price.
-
-
-
-\## Objectives
-
-
-
-The main objectives of this project are:
-
-
-
-1\. Analyze housing data and identify important factors affecting house prices.
-
-2\. Clean and preprocess the dataset for Machine Learning.
-
-3\. Perform Exploratory Data Analysis to understand relationships between features.
-
-4\. Engineer useful features from the available data.
-
-5\. Train regression models for house price prediction.
-
-6\. Evaluate and compare Machine Learning models.
-
-7\. Build an interactive Streamlit application for real-time predictions.
-
-
-
-\## Dataset
-
-
-
-The project uses a housing dataset containing information about residential properties.
-
-
-
-\### Features
-
-
-
-| Feature | Description |
-
+| Type | Features |
 |---|---|
+| Numeric | `area`, `bedrooms`, `bathrooms`, `stories`, `parking` |
+| Yes/No | `mainroad`, `guestroom`, `basement`, `hotwaterheating`, `airconditioning`, `prefarea` |
+| Category | `furnishingstatus` (furnished, semi-furnished, unfurnished) |
 
-| `area` | Area of the house in square feet |
+Prices are shown in rupees (₹).
 
-| `bedrooms` | Number of bedrooms |
+## Approach
 
-| `bathrooms` | Number of bathrooms |
+1. **Exploration:** price distribution, area vs. price, bedrooms vs. price and a correlation heatmap.
+2. **Cleaning:** checked for missing values and duplicates (none found).
+3. **Feature engineering:** added `Bedrooms_per_area` and one-hot encoded the categorical columns.
+4. **Avoiding data leakage:** a `Price_per_area` feature was tried and removed, because it is calculated from the target (price) and would make the scores look better than they really are.
+5. **Modeling:** an 80/20 train/test split, comparing Linear Regression, Ridge Regression and Random Forest.
+6. **Deployment:** the trained model is saved with `joblib` and served through a Streamlit app.
 
-| `stories` | Number of stories |
+## Results
 
-| `mainroad` | Whether the property has main road access |
+Scores on the 109-house test set:
 
-| `guestroom` | Whether the property has a guest room |
+| Model | MAE (₹) | RMSE (₹) | R² |
+|---|---|---|---|
+| Linear Regression | 986,563 | 1,345,327 | 0.642 |
+| **Ridge Regression** | **970,246** | **1,325,320** | **0.652** |
+| Random Forest | 1,019,553 | 1,394,397 | 0.615 |
 
-| `basement` | Whether the property has a basement |
+<!-- UPDATE: after you run cross-validation, replace this table with the 5-fold mean ± std results -->
 
-| `hotwaterheating` | Whether hot water heating is available |
+**What drives the price?** In the Random Forest, **area** is by far the most important feature (about 44% of importance), followed by **bathrooms** (about 15%). Air conditioning, stories and parking come next.
 
-| `airconditioning` | Whether air conditioning is available |
+A typical prediction is off by roughly **₹10 Lakh**, which is why the app shows a price range and not just a single number.
 
-| `parking` | Number of parking spaces |
+## Run it locally
 
-| `prefarea` | Whether the property is located in a preferred area |
-
-| `furnishingstatus` | Furnishing status of the property |
-
-| `price` | Target variable representing house price |
-
-
-
-\## Exploratory Data Analysis
-
-
-
-Several visualizations were performed to understand the dataset and relationships between variables.
-
-
-
-\### Analysis included:
-
-
-
-\- Distribution of house prices
-
-\- Area vs. house price
-
-\- Bedrooms vs. house price
-
-\- Correlation analysis
-
-\- Correlation heatmap
-
-\- Feature relationships
-
-\- Feature importance
-
-
-
-\## Data Preprocessing
-
-
-
-The following preprocessing techniques were applied:
-
-
-
-\- Handling missing values
-
-\- Removing duplicate records
-
-\- Encoding categorical variables
-
-\- Converting binary categorical variables into numerical values
-
-\- Splitting the dataset into training and testing sets
-
-
-
-The dataset was divided into:
-
-
-
-\- \*\*80% Training Data\*\*
-
-\- \*\*20% Testing Data\*\*
-
-
-
-\## Feature Engineering
-
-
-
-A derived feature was created:
-
-
-
-\### Bedrooms per Area
-
-
-
-```text
-
-Bedrooms\_per\_area = bedrooms / area
-
-This feature represents the relationship between the number of bedrooms and the size of the property.
-
-
-
-Price\_per\_area was intentionally excluded from the final predictive model because it directly depends on the target variable price and would introduce target leakage.
-
-
-
-&#x20;**Machine Learning Models**
-
-
-
-The project experimented with multiple regression algorithms:
-
-
-
-1\. Linear Regression
-
-A basic regression algorithm used to model the relationship between input features and house prices.
-
-
-
-2\. Ridge Regression
-
-A regularized version of Linear Regression that helps reduce overfitting.
-
-
-
-3\. Random Forest Regression
-
-An ensemble Machine Learning algorithm that combines multiple decision trees to improve prediction performance.
-
-
-
-The Random Forest model was selected for the final prediction application.
-
-
-
-&#x20;**Model Evaluation**
-
-
-
-The models were evaluated using:
-
-
-
-Mean Absolute Error (MAE)
-
-Measures the average absolute difference between actual and predicted prices.
-
-
-
-Root Mean Squared Error (RMSE)
-
-Measures the square root of the average squared prediction error.
-
-
-
-R² Score
-
-Measures how well the model explains the variation in house prices.
-
-
-
-&#x20;**Streamlit Web Application**
-
-
-
-The trained Machine Learning model is integrated into an interactive Streamlit web application.
-
-
-
-Users can enter:
-
-
-
-Area
-
-Number of bedrooms
-
-Number of bathrooms
-
-Number of stories
-
-Parking spaces
-
-Main road access
-
-Guest room availability
-
-Basement availability
-
-Hot water heating
-
-Air conditioning
-
-Preferred area
-
-Furnishing status
-
-
-
-The application then generates an estimated house price.
-
-
-
-&#x20;**Running the Application**
-
-1\. Clone the repository
-
-git clone https://github.com/YOUR-USERNAME/House-Price-Prediction-ML.git
-
-2\. Navigate into the project
-
+```bash
+# 1. Clone the repository
+git clone https://github.com/sakshij-png/House-Price-Prediction-ML.git
 cd House-Price-Prediction-ML
 
-3\. Install dependencies
+# 2. Create and activate a virtual environment (optional but recommended)
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS / Linux
 
-python -m pip install -r requirements.txt
+# 3. Install dependencies
+pip install -r requirements.txt
 
-4\. Run the Streamlit application
+# 4. Start the app
+streamlit run app.py
+```
 
-python -m streamlit run app.py
+The app opens at `http://localhost:8501`.
 
+## Project structure
 
-
-The application will open in your browser.
-
-
-
-📁 Project Structure
-
+```
 House-Price-Prediction-ML/
-
-│
-
+├── app.py                  # Streamlit web app
 ├── data/
-
-│   └── housing.csv
-
-│
-
+│   └── Housing.csv         # Dataset
 ├── models/
-
-│   ├── house\_price\_model.pkl
-
-│   └── model\_columns.pkl
-
-│
-
+│   └── house_price_model.pkl   # Trained model
 ├── notebooks/
-
-│   └── house\_price\_analysis.ipynb
-
-│
-
-├── app.py
-
+│   └── house_price_analysis.ipynb   # EDA, modeling and evaluation
+├── .streamlit/
+│   └── config.toml         # App theme
 ├── requirements.txt
-
-├── .gitignore
-
 └── README.md
+```
 
+## Key learnings
 
+- **Data leakage is easy to miss.** A feature built from the target (`Price_per_area`) made the scores look great. Removing it gave honest results.
+- **A simpler model can win on small data.** With 545 rows, Ridge Regression scored better than Random Forest, so more complex does not always mean better.
+- **One metric isn't enough.** MAE shows the typical error in rupees, RMSE punishes big misses, and R² shows how much of the price variation the model explains.
+- **Feature importance explains the model.** Area drives the price far more than any other feature, which matches common sense.
+- **Deployment needs guardrails.** Limiting inputs to the training range and showing a price range makes the app more trustworthy than a single exact number.
+- **Shipping is its own skill.** Saving the model, building a clean Streamlit interface and publishing it taught me more than the notebook alone.
 
-&#x20;**Technologies Used**
+## Author
 
-Python
+**Sakshi Joshi**
 
-Pandas
-
-NumPy
-
-Matplotlib
-
-Seaborn
-
-Scikit-learn
-
-Joblib
-
-Jupyter Notebook
-
-Streamlit
-
-Git \& GitHub
-
-
-
-&#x20;**Key Learning Outcomes**
-
-
-
-Through this project, the following concepts were implemented:
-
-
-
-Data preprocessing
-
-Exploratory Data Analysis
-
-Data visualization
-
-Feature engineering
-
-Categorical encoding
-
-Regression
-
-Ensemble Machine Learning
-
-Model evaluation
-
-Model serialization
-
-Streamlit application development
-
-Git and GitHub version control
-
-
-
-&#x20;**Future Improvements**
-
-
-
-Future versions of this project could include:
-
-
-
-Hyperparameter tuning
-
-Additional regression algorithms
-
-Cross-validation
-
-Advanced feature engineering
-
-Location-based features
-
-Interactive visual analytics
-
-Cloud deployment
-
-Improved UI/UX
-
-Model monitoring
-
-
-
+B.Tech student in AI & Data Science
